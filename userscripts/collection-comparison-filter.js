@@ -300,11 +300,16 @@
     `;
     document.querySelector('#megaContent center').insertBefore(filterWrapper, document.querySelector('.niceTable'));
 
+    let cached = JSON.parse(localStorage.getItem('guideTags'));
     const p = new Promise((resolve) => {
       // Get adoptable guide tags
-      if (localStorage.getItem('adoptableGuideTags') === null) {
+      const currentTime = new Date().getTime();
+      if (cached === null || currentTime > cached.expiry) {
         filterUtils.getTags().then((tags) => {
-          localStorage.setItem('adoptableGuideTags', JSON.stringify(tags));
+          localStorage.setItem('guideTags', JSON.stringify({
+            data: tags,
+            expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
+          }));
           resolve();
         });
       } else {
@@ -315,7 +320,7 @@
     p.then(() => {
       // Append tags to dropdown
       const tagsFragment = new DocumentFragment();
-      JSON.parse(localStorage.getItem('adoptableGuideTags')).forEach((tag) => {
+      cached.data.forEach((tag) => {
         const option = document.createElement('option');
         option.value = tag;
         option.textContent = tag;
