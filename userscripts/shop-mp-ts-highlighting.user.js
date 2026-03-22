@@ -5,6 +5,7 @@
 // @description  Highlights missing adopts and army adopts in the shops, marketplace, and trade station.
 // @author       mandy-h
 // @match        https://www.clickcritters.com/shop.php?id=*
+// @match        https://www.clickcritters.com/cashshop.php
 // @match        https://www.clickcritters.com/marketplace.php?act=recent*
 // @match        https://www.clickcritters.com/marketplace.php?act=search*
 // @match        https://www.clickcritters.com/tradestation.php?act=browselatest*
@@ -43,7 +44,8 @@
 
         links.forEach((link) => {
             requestAnimationFrame(() => {
-                const id = link.href.match(/\d+/)[0];
+                const url = new URL(link.href);
+                const id = url.searchParams.get('id');
                 const adoptContainer = link.closest('.adopt') || link.closest('div');
                 if (wanted.includes(id)) {
                     adoptContainer.style.background = highlightColor;
