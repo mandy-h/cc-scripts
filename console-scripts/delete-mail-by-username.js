@@ -34,6 +34,7 @@
   await batchProcess(mailToDelete);
   console.log('Deleted', (links.length - savedMailCount), 'messages');
   console.log('Ignored', savedMailCount, 'saved messages');
+  console.log('Refresh the page to see the updated inbox');
 })();
 
 async function batchProcess(tasks, batchSize = 5) {
