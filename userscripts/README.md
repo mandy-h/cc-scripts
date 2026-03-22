@@ -3,6 +3,7 @@
 Adds keyboard and gamepad functionality to the Click Exchange.
 ## ce-prevent-reload-mistakes
 Prevents mistakes from page reloads or clicking the back button while using the CE by modifying the browsing history.
+* This script may conflict with existing scripts that check the page URL, such as CE hotkey scripts. In the script file, there is a note on ways to fix this.
 ## click-and-drop-ui-modifications
 Modifies the click-and-drop UI used in quick_folder_sort.php, the TS, etc.
 
