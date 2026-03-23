@@ -7,7 +7,7 @@
 // @match        https://www.clickcritters.com/*
 // @icon         https://www.clickcritters.com/favicon.ico
 // @grant        GM_addStyle
-// @require      https://unpkg.com/freezeframe/dist/freezeframe.min.js
+// @require      https://unpkg.com/freezeframe@5.0.2/dist/freezeframe.min.js#sha256-VnCJJbxVPE9j4cCrix97ujM3txFn26FsCKMK6wx0iWg=
 // @run-at       document-start
 // ==/UserScript==
 
