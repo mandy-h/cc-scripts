@@ -7,6 +7,7 @@
 // @match        https://www.clickcritters.com/clickexchange.php?act=doCE*
 // @icon         https://www.clickcritters.com/favicon.ico
 // @grant        none
+// @run-at       document-start
 // ==/UserScript==
 
 (function () {
@@ -14,5 +15,7 @@
 
     // Might conflict with other userscripts that check the page URL. If it does, either combine the scripts or use a global flag to control timing.
     // Also causes flickering in the address bar due to the URL changing. I can't fix that.
-    history.replaceState(null, '', location.pathname + location.hash);
+    window.addEventListener('load', (event) => {
+        history.replaceState(null, '', location.pathname + location.hash);
+    });
 })();
