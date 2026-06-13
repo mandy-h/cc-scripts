@@ -45,13 +45,4 @@
             }
         }
     }
-
-    // Applies to both desktop and mobile - make the hot streak box less wide
-    const streakDiv = Array.from(document.querySelectorAll('center div')).find((div) => {
-        return div.textContent.toLowerCase().includes('hot streak');
-    });
-    if (streakDiv) {
-        // CE home page doesn't have the streak progress bar
-        streakDiv.style.width = '80%';
-    }
 })();
