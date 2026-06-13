@@ -4,7 +4,7 @@
 // @author       mandy-h
 // @version      2026-03-22
 // @description  Prevents mistakes from page reloads or clicking the back button while using the CE by modifying the browsing history.
-// @match        https://www.clickcritters.com/clickexchange.php?act=doCE*
+// @match        https://www.clickcritters.com/clickgym.php?act=doCE*
 // @icon         https://www.clickcritters.com/favicon.ico
 // @grant        none
 // @run-at       document-start

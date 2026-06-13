@@ -2,8 +2,7 @@
 // @name        CC | Keyboard and Gamepad Controls
 // @namespace   https://github.com/mandy-h/cc-scripts
 // @author      mandy-h
-// @match       https://www.clickcritters.com/clickexchange.php*
-// @match       https://www.clickcritters.com/clickexchange_gwoc*
+// @match       https://www.clickcritters.com/clickgym.php*
 // @icon        https://www.clickcritters.com/favicon.ico
 // @grant       none
 // @version     1.0
@@ -14,7 +13,7 @@
     'use strict';
 
     // Check if we're on the main CE page; if so, there's a lot of extra text at the top and we have to account for this when setting the y-coordinate.
-    const onHomePage = (document.URL === 'https://www.clickcritters.com/clickexchange.php');
+    const onHomePage = (document.URL === 'https://www.clickcritters.com/clickgym.php');
 
     const width = document.body.clientWidth;
     const xLeft = (width / 2) - 50;
@@ -38,7 +37,7 @@
             answer1.click();
         } else if (rightKeys.includes(releasedKey)) {
             answer2.click();
-        } else if (backKeys.includes(releasedKey) && (document.links[0].href.endsWith('clickexchange.php') || document.links[0].href.endsWith('clickexchange_gwoc.php'))) {
+        } else if (backKeys.includes(releasedKey) && (document.links[0].href.endsWith('clickgym.php'))) {
             document.links[0].click();
         }
     });
@@ -77,7 +76,7 @@
 
         function clickAnswer(pressedButtonIndex) {
             const pressedButtonName = buttons[pressedButtonIndex];
-            if (pressedButtonIndex > -1 && (document.links[0].href.endsWith('clickexchange.php') || document.links[0].href.endsWith('clickexchange_gwoc.php'))) {
+            if (pressedButtonIndex > -1 && (document.links[0].href.endsWith('clickgym.php'))) {
                 // 'pressedButtonIndex > -1' means any button press. Any button press to return to CE after an incorrect answer.
                 document.links[0].click();
             } else if (leftTriggers.includes(pressedButtonName)) {

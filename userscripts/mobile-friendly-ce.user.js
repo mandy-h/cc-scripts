@@ -4,8 +4,8 @@
 // @author       mandy-h
 // @version      2026-03-15
 // @description  Modifies CE page styling for a better mobile experience.
-// @match        https://www.clickcritters.com/clickexchange.php
-// @match        https://www.clickcritters.com/clickexchange.php?act=doCE*
+// @match        https://www.clickcritters.com/clickgym.php
+// @match        https://www.clickcritters.com/clickgym.php?act=doCE*
 // @icon         https://www.clickcritters.com/favicon.ico
 // @grant        none
 // @run-at       document-end
@@ -30,7 +30,7 @@
         wrapperDiv.style.width = 'min-content';
 
         // On the main CE page, move the "Gaining Credits" and "Using Credits" boxes to a new line
-        if (window.location.href === 'https://www.clickcritters.com/clickexchange.php') {
+        if (window.location.href === 'https://www.clickcritters.com/clickgym.php') {
             const table = document.querySelector('center table');
             const row = table.querySelector('tr');
             const cells = row.querySelectorAll('td');
