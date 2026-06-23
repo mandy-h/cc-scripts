@@ -2,7 +2,7 @@
 // @name         CC | Collection Comparison Filter
 // @namespace    https://github.com/mandy-h/cc-scripts
 // @author       mandy-h
-// @version      1.0
+// @version      2026-06-23
 // @description  Adds a form on the collection comparison page to allow advanced filtering.
 // @match        https://www.clickcritters.com/compare_collections.php?compareto=*
 // @icon         https://www.clickcritters.com/favicon.ico
@@ -17,14 +17,12 @@
       theyNeed: {},
       bothHave: {}
     },
-    lastSelectedTag: {
-      tag: '',
-      ids: []
-    }
+    tagCache: {}
   };
 
   const CONSTANTS = {
     elements: {
+      table: document.querySelector('.niceTable'),
       tableBody: document.querySelector('.niceTable tbody'),
       iNeedHeading: document.querySelectorAll('.niceTable .headingRow')[1],
       theyNeedHeading: document.querySelectorAll('.niceTable .headingRow')[2],
@@ -229,9 +227,11 @@
     setLoaderVisibility(state) {
       const loader = document.querySelector('.filter-loader');
       if (state === 'show') {
+        CONSTANTS.elements.table.ariaBusy = true;
         loader.classList.add('is-shown');
         document.querySelector('#filter-form [type="submit"]').disabled = true;
       } else if (state === 'hide') {
+        CONSTANTS.elements.table.ariaBusy = false;
         loader.classList.remove('is-shown');
         document.querySelector('#filter-form [type="submit"]').disabled = false;
       }
@@ -241,26 +241,74 @@
   /* ========== Main code ========== */
 
   (function init() {
+    CONSTANTS.elements.table.ariaLive = 'polite';
+    CONSTANTS.elements.table.ariaBusy = false;
+
     // Append form elements to page
     const filterWrapper = document.createElement('div');
     filterWrapper.id = 'collection-filter';
     filterWrapper.innerHTML = `
       <style>
+        #collection-filter {
+          max-width: 80%;
+        }
+        #tag-selection {
+          width: 35ch;
+        }
+        #selected-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          justify-content: center;
+          margin: 1rem;
+        }
+        .tag-chip {
+          align-items: center;
+          background-color: hsl(195, 53%, 79%);
+          border-radius: 4px;
+          display: inline-flex;
+        }
+        .tag-chip-label {
+          padding: 8px;
+          white-space: nowrap;
+        }
+        .tag-chip-remove {
+          align-items: center;
+          background: none;
+          border: none;
+          border-radius: inherit;
+          border-bottom-left-radius: 0;
+          border-top-left-radius: 0;
+          cursor: pointer;
+          display: inline-flex;
+          height: 100%;
+          justify-content: center;
+          min-height: 16px;
+          min-width: 16px;
+          padding: 8px;
+          transition: .2s all;
+        }
+        .tag-chip-remove:hover,
+        .tag-chip-remove:focus {
+          background-color: hsl(195, 53%, 64%);
+        }
         #filter-form {
-          display: inline-block;
+          display: block;
           margin: 1rem;
           text-align: center;
         }
-        #filter-form * {
-          margin-bottom: 4px;
-        }
         #filter-form label {
           display: block;
+          margin-bottom: 4px;
+        }
+        .filter-submit {
+          margin-top: 8px;
         }
         .filter-loader {
           background-color: #eee;
           height: 8px;
-          margin-top: 8px;
+          margin: 8px auto;
+          max-width: 200px;
           overflow: hidden;
           position: relative;
           visibility: hidden;
@@ -279,6 +327,7 @@
         .filter-loader.is-shown > .filter-loader__foreground {
           animation-play-state: running;
         }
+
         @keyframes loading {
           0% {
             transform: translateX(-24px);
@@ -288,17 +337,27 @@
           }
         }
       </style>
+      <form id="tag-search-form" novalidate>
+        <label>Search for a tag: <input list="tag-list" id="tag-selection" name="tag-selection" /></label>
+        <datalist id="tag-list"></datalist>
+        <button type="submit">
+          Add Tag
+        </button>
+      </form>
+      <section>
+        <h3>Selected Tags</h3>
+        <div id="selected-tags" role="group" aria-label="Selected Tags" aria-live="polite"></div>
+      </section>
       <form id="filter-form">
-        <label>Filter by tag: <select name="tag"><option value=""></option></select></label>
         <label>My collection - only spares and missing: <input type="checkbox" name="my-spares-only"/></label>
         <label>Their collection - only spares and missing: <input type="checkbox" name="their-spares-only"/></label>
-        <button type="submit" value="Filter" class="filter-submit" />
+        <button type="submit" class="filter-submit">
           Filter
         </button>
         <div class="filter-loader"><div class="filter-loader__foreground"></div></div>
       </form>
     `;
-    document.querySelector('#megaContent center').insertBefore(filterWrapper, document.querySelector('.niceTable'));
+    document.querySelector('#megaContent center').insertBefore(filterWrapper, CONSTANTS.elements.table);
 
     let cached = JSON.parse(localStorage.getItem('guideTags'));
     const p = new Promise((resolve) => {
@@ -326,7 +385,7 @@
         option.textContent = tag;
         tagsFragment.appendChild(option);
       });
-      document.querySelector('#filter-form [name="tag"]').appendChild(tagsFragment);
+      document.querySelector('#tag-list').appendChild(tagsFragment);
     });
 
     // Get user IDs being compared
@@ -340,6 +399,50 @@
     filterData.adoptables.theyNeed = filterUtils.processAdoptableRows(filterData.adoptables.theyNeed, CONSTANTS.elements.theyNeedHeading);
     filterData.adoptables.bothHave = filterUtils.processAdoptableRows(filterData.adoptables.bothHave, CONSTANTS.elements.bothHaveHeading);
 
+    const selectedTagsSet = new Set();
+
+    const renderTagChips = () => {
+      const container = document.querySelector('#selected-tags');
+      container.innerHTML = '';
+      selectedTagsSet.forEach((tag) => {
+        const chip = document.createElement('div');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `<span class="tag-chip-label">${tag}</span><button type="button" class="tag-chip-remove" aria-label="Remove ${tag}">×</button>`;
+        chip.querySelector('.tag-chip-remove').addEventListener('click', () => {
+          selectedTagsSet.delete(tag);
+          renderTagChips();
+        });
+        container.appendChild(chip);
+      });
+    };
+
+    // Tag search handler
+    document.querySelector('#tag-search-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.querySelector('#tag-selection');
+
+      // Clear out errors between submissions
+      input.setCustomValidity('');
+
+      const validTags = [...document.querySelectorAll('#tag-list option')].map(o => o.value);
+      const selectedTag = input.value.trim();
+
+      if (!selectedTag) {
+        return;
+      }
+
+      if (!validTags.includes(selectedTag)) {
+        input.setCustomValidity('Please select a valid tag from the list.');
+        input.reportValidity();
+        return;
+      }
+
+      input.reportValidity();
+      selectedTagsSet.add(selectedTag);
+      renderTagChips();
+      input.value = '';
+    });
+
     // Form submit handler
     document.querySelector('#filter-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -349,29 +452,36 @@
       setTimeout(async () => {
         const adoptableData = filterData.adoptables;
         const filterFormData = new FormData(document.querySelector('#filter-form'));
-        const tag = filterFormData.get('tag');
         const mySparesChecked = filterFormData.get('my-spares-only');
         const theirSparesChecked = filterFormData.get('their-spares-only');
 
-        // Tag selected, so display only the adopts that are in the tag
         let idsInTag;
-        const p1 = filterUtils.clearTable();
-        let p2;
-        // Fetching adoptable IDs in the tag, or re-using cached data
-        if (filterData.lastSelectedTag.tag === tag) {
-          // Use cached data
-          idsInTag = filterData.lastSelectedTag.ids;
-          p2 = idsInTag;
-        } else if (tag) {
-          // Fetch tag IDs
-          p2 = filterUtils.getIdsInTag(tag);
-          idsInTag = await p2;
-          filterData.lastSelectedTag.tag = tag;
-          filterData.lastSelectedTag.ids = idsInTag;
-        }
 
-        // Wait for p1 and p2 to finish before rendering the table
-        await Promise.all([p1, p2]);
+        const p1 = filterUtils.clearTable();
+
+        // Fetching adoptable IDs in the tag, or re-using cached data
+        if (selectedTagsSet.size > 0) {
+          const fetchPromises = [...selectedTagsSet].map((tag) => {
+            if (Object.hasOwn(filterData.tagCache, tag)) {
+              return Promise.resolve(filterData.tagCache[tag]);
+            }
+
+            return filterUtils.getIdsInTag(tag).then((ids) => {
+              filterData.tagCache[tag] = ids;
+              return ids;
+            });
+          });
+
+          const results = await Promise.all([p1, ...fetchPromises]);
+          // results[0] is p1 (clearTable), rest are ID arrays per tag
+          const idArrays = results.slice(1);
+
+          // Union all tag ID sets
+          idsInTag = [...new Set(idArrays.flat())];
+        } else {
+          await p1;
+          idsInTag = [];
+        }
 
         const createASection = (section) => {
           filterUtils.createTableHeading([section]);
