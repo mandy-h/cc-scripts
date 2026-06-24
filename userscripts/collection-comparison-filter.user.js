@@ -238,6 +238,25 @@
     }
   };
 
+  const savedSetsKey = 'savedTagSets';
+  const savedSetUtils = {
+    getAll() {
+      return JSON.parse(localStorage.getItem(savedSetsKey)) ?? {};
+    },
+
+    save(name, tags) {
+      const sets = savedSetUtils.getAll();
+      sets[name] = [...tags];
+      localStorage.setItem(savedSetsKey, JSON.stringify(sets));
+    },
+
+    delete(name) {
+      const sets = savedSetUtils.getAll();
+      delete sets[name];
+      localStorage.setItem(savedSetsKey, JSON.stringify(sets));
+    }
+  };
+
   /* ========== Main code ========== */
 
   (function init() {
@@ -252,15 +271,21 @@
         #collection-filter {
           max-width: 80%;
         }
+        #collection-filter > * {
+          margin: 1rem;
+        }
+        #collection-filter button {
+          cursor: pointer;
+        }
         #tag-selection {
           width: 35ch;
         }
-        #selected-tags {
+        .tag-chip-wrapper {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
           justify-content: center;
-          margin: 1rem;
+          margin-bottom: 1rem;
         }
         .tag-chip {
           align-items: center;
@@ -268,19 +293,21 @@
           border-radius: 4px;
           display: inline-flex;
         }
+        #saved-tags-list .tag-chip {
+          background-color: hsl(0, 0%, 87%);
+        }
         .tag-chip-label {
           padding: 8px;
           white-space: nowrap;
         }
+        .saved-set-load,
         .tag-chip-remove {
           align-items: center;
-          background: none;
+          background: inherit;
           border: none;
           border-radius: inherit;
-          border-bottom-left-radius: 0;
-          border-top-left-radius: 0;
-          cursor: pointer;
           display: inline-flex;
+          font-weight: bold;
           height: 100%;
           justify-content: center;
           min-height: 16px;
@@ -288,13 +315,22 @@
           padding: 8px;
           transition: .2s all;
         }
+        .saved-set-load {
+          border-bottom-right-radius: 0;
+          border-top-right-radius: 0;
+        }
+        .tag-chip-remove {
+          border-bottom-left-radius: 0;
+          border-top-left-radius: 0;
+        }
+        .saved-set-load:hover,
+        .saved-set-load:focus,
         .tag-chip-remove:hover,
         .tag-chip-remove:focus {
-          background-color: hsl(195, 53%, 64%);
+          filter: brightness(85%);
         }
         #filter-form {
           display: block;
-          margin: 1rem;
           text-align: center;
         }
         #filter-form label {
@@ -345,8 +381,13 @@
         </button>
       </form>
       <section>
+        <h3>Saved Tag Sets</h3>
+        <div id="saved-tags-list" class="tag-chip-wrapper" role="group" aria-label="Saved Tag Sets" aria-live="polite"></div>
+      </section>
+      <section>
         <h3>Selected Tags</h3>
-        <div id="selected-tags" role="group" aria-label="Selected Tags" aria-live="polite"></div>
+        <div id="selected-tags" class="tag-chip-wrapper" role="group" aria-label="Selected Tags" aria-live="polite"></div>
+        <button id="save-tags-btn" type="button">Save Currently Selected Tags</button>
       </section>
       <form id="filter-form">
         <label>My collection - only spares and missing: <input type="checkbox" name="my-spares-only"/></label>
@@ -403,6 +444,10 @@
 
     const renderTagChips = () => {
       const container = document.querySelector('#selected-tags');
+      if (selectedTagsSet.size === 0) {
+        container.innerHTML = 'No tags selected';
+        return;
+      }
       container.innerHTML = '';
       selectedTagsSet.forEach((tag) => {
         const chip = document.createElement('div');
@@ -442,6 +487,68 @@
       renderTagChips();
       input.value = '';
     });
+
+    const renderTagSets = () => {
+      const container = document.querySelector('#saved-tags-list');
+      const sets = savedSetUtils.getAll();
+      const setEntries = Object.entries(sets);
+
+      if (setEntries.length === 0) {
+        container.innerHTML = 'No sets saved';
+        return;
+      }
+
+      container.innerHTML = '';
+
+      setEntries.forEach(([name, tags]) => {
+        const el = document.createElement('div');
+        el.classList.add('tag-chip');
+        el.innerHTML = `
+          <button type="button" class="tag-chip-label saved-set-load" aria-label="Load ${name}">${name}</span>
+          <button type="button" class="tag-chip-remove" aria-label="Delete ${name}">×</button>
+        `;
+
+        el.querySelector('.saved-set-load').addEventListener('click', () => {
+          const confirmation = window.confirm('Are you sure you want to replace all currently applied tags with tag set?');
+          if (!confirmation) {
+            return;
+          }
+          selectedTagsSet.clear();
+          tags.forEach((tag) => selectedTagsSet.add(tag));
+          renderTagChips();
+        });
+
+        el.querySelector('.tag-chip-remove').addEventListener('click', () => {
+          const confirmation = window.confirm('Are you sure you want to delete this tag set?');
+          if (!confirmation) {
+            return;
+          }
+          savedSetUtils.delete(name);
+          renderTagSets();
+        });
+
+        container.appendChild(el);
+      });
+    };
+
+    document.querySelector('#save-tags-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+
+      if (selectedTagsSet.size === 0) {
+        return;
+      }
+
+      const name = window.prompt('Enter a name for this tag set:')?.trim();
+      if (!name) {
+        return;
+      }
+
+      savedSetUtils.save(name, selectedTagsSet);
+      renderTagSets();
+    });
+
+    renderTagSets();
+    renderTagChips();
 
     // Form submit handler
     document.querySelector('#filter-form').addEventListener('submit', (e) => {
