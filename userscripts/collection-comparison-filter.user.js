@@ -6,7 +6,7 @@
 // @description  Adds a form on the collection comparison page to allow advanced filtering.
 // @match        https://www.clickcritters.com/compare_collections.php?compareto=*
 // @icon         https://www.clickcritters.com/favicon.ico
-// @grant        none
+// @grant        GM_addStyle
 // ==/UserScript==
 
 'use strict';
@@ -39,6 +39,141 @@
       bothHave: 'Adoptables you both have'
     }
   };
+
+  const css = `
+    #collection-filter {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 1rem;
+      max-width: 80%;
+      row-gap: 1rem;
+    }
+    #collection-filter * {
+      box-sizing: border-box;
+    }
+    #collection-filter > * {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-inline: 1em;
+    }
+    #collection-filter > :first-child {
+      border-right: 1px solid hsl(0, 0%, 87%);
+    }
+    #collection-filter h3 {
+      font-size: 1em;
+      font-weight: bold;
+    }
+    #collection-filter button {
+      cursor: pointer;
+      font-size: 1em;
+    }
+    .form-wrapper {
+      background: hsl(0, 0%, 93%);
+      grid-column: span 2;
+      padding: .5rem;
+    }
+    #tag-selection {
+      display: block;
+      margin-block: .5rem;
+      max-width: 50ch;
+      width: 100%;
+    }
+    .tag-chip-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .tag-chip {
+      align-items: center;
+      background-color: hsl(204, 69%, 77%);
+      border-radius: 4px;
+      display: inline-flex;
+    }
+    #saved-tags-list .tag-chip {
+      background-color: hsl(0, 0%, 87%);
+    }
+    .tag-chip-label {
+      padding: .25em .5em;
+      white-space: nowrap;
+    }
+    .saved-set-load,
+    .tag-chip-remove {
+      align-items: center;
+      background: inherit;
+      border: none;
+      border-radius: inherit;
+      display: inline-flex;
+      font-size: inherit;
+      font-weight: bold;
+      height: 100%;
+      justify-content: center;
+      min-height: 24px;
+      min-width: 24px;
+      padding: .25em .5em;
+      transition: .2s all;
+    }
+    .saved-set-load {
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+    }
+    .tag-chip-remove {
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+    }
+    .saved-set-load:hover,
+    .tag-chip-remove:hover {
+      filter: brightness(85%);
+    }
+    #filter-form {
+      display: block;
+      text-align: center;
+    }
+    #filter-form label {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .filter-submit {
+      margin-top: 8px;
+    }
+    .filter-loader {
+      background-color: hsl(0, 0%, 83%);
+      height: 8px;
+      margin: 8px auto;
+      max-width: 200px;
+      overflow: hidden;
+      position: relative;
+      visibility: hidden;
+    }
+    .filter-loader.is-shown {
+      visibility: visible;
+    }
+    .filter-loader__foreground {
+      animation: loading 1.2s ease-in-out forwards infinite;
+      animation-play-state: paused;
+      border-left: 24px solid #00bcd4;
+      height: 100%;
+      position: absolute;
+      width: 100%;
+    }
+    .filter-loader.is-shown > .filter-loader__foreground {
+      animation-play-state: running;
+    }
+
+    @keyframes loading {
+      0% {
+        transform: translateX(-24px);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+  `;
+
+  GM_addStyle(css);
 
   /* ========== Utility functions ========== */
 
@@ -267,114 +402,8 @@
     const filterWrapper = document.createElement('div');
     filterWrapper.id = 'collection-filter';
     filterWrapper.innerHTML = `
-      <style>
-        #collection-filter {
-          max-width: 80%;
-        }
-        #collection-filter > * {
-          margin: 1rem;
-        }
-        #collection-filter button {
-          cursor: pointer;
-        }
-        #tag-selection {
-          width: 35ch;
-        }
-        .tag-chip-wrapper {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          justify-content: center;
-          margin-bottom: 1rem;
-        }
-        .tag-chip {
-          align-items: center;
-          background-color: hsl(195, 53%, 79%);
-          border-radius: 4px;
-          display: inline-flex;
-        }
-        #saved-tags-list .tag-chip {
-          background-color: hsl(0, 0%, 87%);
-        }
-        .tag-chip-label {
-          padding: 8px;
-          white-space: nowrap;
-        }
-        .saved-set-load,
-        .tag-chip-remove {
-          align-items: center;
-          background: inherit;
-          border: none;
-          border-radius: inherit;
-          display: inline-flex;
-          font-weight: bold;
-          height: 100%;
-          justify-content: center;
-          min-height: 16px;
-          min-width: 16px;
-          padding: 8px;
-          transition: .2s all;
-        }
-        .saved-set-load {
-          border-bottom-right-radius: 0;
-          border-top-right-radius: 0;
-        }
-        .tag-chip-remove {
-          border-bottom-left-radius: 0;
-          border-top-left-radius: 0;
-        }
-        .saved-set-load:hover,
-        .saved-set-load:focus,
-        .tag-chip-remove:hover,
-        .tag-chip-remove:focus {
-          filter: brightness(85%);
-        }
-        #filter-form {
-          display: block;
-          text-align: center;
-        }
-        #filter-form label {
-          display: block;
-          margin-bottom: 4px;
-        }
-        .filter-submit {
-          margin-top: 8px;
-        }
-        .filter-loader {
-          background-color: #eee;
-          height: 8px;
-          margin: 8px auto;
-          max-width: 200px;
-          overflow: hidden;
-          position: relative;
-          visibility: hidden;
-        }
-        .filter-loader.is-shown {
-          visibility: visible;
-        }
-        .filter-loader__foreground {
-          animation: loading 1.2s ease-in-out forwards infinite;
-          animation-play-state: paused;
-          border-left: 24px solid #00bcd4;
-          height: 100%;
-          position: absolute;
-          width: 100%;
-        }
-        .filter-loader.is-shown > .filter-loader__foreground {
-          animation-play-state: running;
-        }
-
-        @keyframes loading {
-          0% {
-            transform: translateX(-24px);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-      </style>
       <form id="tag-search-form" novalidate>
-        <label>Search for a tag: <input list="tag-list" id="tag-selection" name="tag-selection" /></label>
+        <label style="width: 100%;">Search for a tag: <input list="tag-list" id="tag-selection" name="tag-selection" /></label>
         <datalist id="tag-list"></datalist>
         <button type="submit">
           Add Tag
@@ -383,19 +412,21 @@
       <section>
         <h3>Saved Tag Sets</h3>
         <div id="saved-tags-list" class="tag-chip-wrapper" role="group" aria-label="Saved Tag Sets" aria-live="polite"></div>
-      </section>
-      <section>
-        <h3>Selected Tags</h3>
-        <div id="selected-tags" class="tag-chip-wrapper" role="group" aria-label="Selected Tags" aria-live="polite"></div>
         <button id="save-tags-btn" type="button">Save Currently Selected Tags</button>
       </section>
-      <form id="filter-form">
-        <label>My collection - only spares and missing: <input type="checkbox" name="my-spares-only"/></label>
-        <label>Their collection - only spares and missing: <input type="checkbox" name="their-spares-only"/></label>
-        <button type="submit" class="filter-submit">
-          Filter
-        </button>
-        <div class="filter-loader"><div class="filter-loader__foreground"></div></div>
+      <div class="form-wrapper">
+        <section>
+          <h3>Selected Tags</h3>
+          <div id="selected-tags" class="tag-chip-wrapper" role="group" aria-label="Selected Tags" aria-live="polite"></div>
+        </section>
+        <form id="filter-form">
+          <label>My collection - only spares and missing: <input type="checkbox" name="my-spares-only"/></label>
+          <label>Their collection - only spares and missing: <input type="checkbox" name="their-spares-only"/></label>
+          <button type="submit" class="filter-submit">
+            Filter
+          </button>
+          <div class="filter-loader"><div class="filter-loader__foreground"></div></div>
+        </div>
       </form>
     `;
     document.querySelector('#megaContent center').insertBefore(filterWrapper, CONSTANTS.elements.table);
