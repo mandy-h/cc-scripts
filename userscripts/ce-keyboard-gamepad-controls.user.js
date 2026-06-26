@@ -5,15 +5,17 @@
 // @match       https://www.clickcritters.com/clickgym.php*
 // @icon        https://www.clickcritters.com/favicon.ico
 // @grant       none
-// @version     1.0
+// @version     2026-06-25
 // @description Adds keyboard and gamepad functionality to the CE.
 // ==/UserScript==
 
 (function () {
     'use strict';
 
+    const cePath = '/clickgym.php';
+
     // Check if we're on the main CE page; if so, there's a lot of extra text at the top and we have to account for this when setting the y-coordinate.
-    const onHomePage = (document.URL === 'https://www.clickcritters.com/clickgym.php');
+    const onHomePage = (document.URL === `https://www.clickcritters.com${cePath}`);
 
     const width = document.body.clientWidth;
     const xLeft = (width / 2) - 50;
@@ -37,7 +39,7 @@
             answer1.click();
         } else if (rightKeys.includes(releasedKey)) {
             answer2.click();
-        } else if (backKeys.includes(releasedKey) && (document.links[0].href.endsWith('clickgym.php'))) {
+        } else if (backKeys.includes(releasedKey) && (document.links[0].href.endsWith(cePath))) {
             document.links[0].click();
         }
     });
@@ -76,7 +78,7 @@
 
         function clickAnswer(pressedButtonIndex) {
             const pressedButtonName = buttons[pressedButtonIndex];
-            if (pressedButtonIndex > -1 && (document.links[0].href.endsWith('clickgym.php'))) {
+            if (pressedButtonIndex > -1 && (document.links[0].href.endsWith(cePath))) {
                 // 'pressedButtonIndex > -1' means any button press. Any button press to return to CE after an incorrect answer.
                 document.links[0].click();
             } else if (leftTriggers.includes(pressedButtonName)) {
