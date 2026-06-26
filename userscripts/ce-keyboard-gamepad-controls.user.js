@@ -14,13 +14,12 @@
 
     const cePath = '/clickgym.php';
 
-    // Check if we're on the main CE page; if so, there's a lot of extra text at the top and we have to account for this when setting the y-coordinate.
-    const onHomePage = (document.URL === `https://www.clickcritters.com${cePath}`);
+    const questionImage = document.querySelector('img[src*="images/cepics/"]');
+    const rect = questionImage.getBoundingClientRect();
 
-    const width = document.body.clientWidth;
-    const xLeft = (width / 2) - 50;
-    const xRight = (width / 2) + 50;
-    const y = onHomePage ? 350 : 150; // This is a guess, but it works okay
+    const xLeft = rect.left + rect.width * 0.5 - 50;
+    const xRight = rect.left + rect.width * 0.5 + 50;
+    const y = rect.top + rect.height * 0.4;
 
     const answer1 = document.elementFromPoint(xLeft, y);
     const answer2 = document.elementFromPoint(xRight, y);
